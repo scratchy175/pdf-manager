@@ -2,8 +2,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-from MergeWindow import *
-from SplitWindow import *
+from Gui.MergeWindow import *
+from Gui.SplitWindow import *
 
 # creating class for window
 class Window(QMainWindow):
