@@ -3,7 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import sys
 
-from MainWindow import *
+from Gui.MainWindow import *
 
 
 if __name__ == "__main__":
