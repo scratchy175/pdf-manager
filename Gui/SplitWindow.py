@@ -1,10 +1,9 @@
-from PyPDF2 import PdfFileMerger
-from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+
+from Gui.GeneralWindow import GeneralWindow
 
 
-class SplitWindow(QMainWindow):
+class SplitGeneralWindow(GeneralWindow):
     def __init__(self):
         super().__init__()
 
@@ -17,3 +16,4 @@ class SplitWindow(QMainWindow):
         self.setWindowIcon(QIcon("logo.png"))
         self.setWindowTitle(title)
         self.setGeometry(top, left, width, height)
+        self.center()

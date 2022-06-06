@@ -3,14 +3,17 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
+from Gui.GeneralWindow import GeneralWindow
 
-class MergeWindows(QMainWindow):
+
+class MergeWindow(GeneralWindow):
     def __init__(self):
         super().__init__()
-
         self.paths = []
         self.fnames = []
+        self.initUI()
 
+    def initUI(self):
         title = "Fusionner des fichiers PDF"
         top = 400
         left = 400
@@ -20,23 +23,23 @@ class MergeWindows(QMainWindow):
         self.setWindowIcon(QIcon("logo.png"))
         self.setWindowTitle(title)
         self.setGeometry(top, left, width, height)
+        self.center()
 
         button_select_file = QPushButton("Ajouter", self)
-        #button_select_file.setGeometry(200,100, 60, 35)
+        # button_select_file.setGeometry(200,100, 60, 35)
         button_select_file.move(100, 50)
         button_select_file.setToolTip("Ajouter un fichier à la liste")
         button_select_file.clicked.connect(self.select_file)
-    
+
         self.list = QListWidget(self)
         self.list.setGeometry(100, 150, 500, 300)
         self.list.move(100, 100)
 
         self.list.dragEnterEvent = self.dragEnterEvent
-        self.list.dragMoveEvent= self.dragMoveEvent
+        self.list.dragMoveEvent = self.dragMoveEvent
         self.list.dropEvent = self.dropEvent
-        
-        self.list.setDragDropMode(QAbstractItemView.InternalMove)
 
+        self.list.setDragDropMode(QAbstractItemView.InternalMove)
 
         self.button_down = QPushButton("Descendre", self)
         self.button_down.move(200, 50)
@@ -68,10 +71,8 @@ class MergeWindows(QMainWindow):
         self.buttonBrowse.setToolTip("Parcourir pour choisir le fichier de destination")
         self.buttonBrowse.clicked.connect(self.browse_file)
 
-
-        self.updateButtonStatus()
-        self.setButtonConnections()
-
+        self.update_button_status()
+        self.set_button_connections()
 
         self.label = QLabel(self)
         self.label.setText("Fichier de destination :")
@@ -85,7 +86,7 @@ class MergeWindows(QMainWindow):
 
     def select_file(self):
         self.filePath, _ = QFileDialog.getOpenFileNames(self, "Sélectionner les fichiers à ajouter", "", "PDF(*.pdf)")
-        
+
         if self.filePath == "":
             return
         else:
@@ -96,17 +97,19 @@ class MergeWindows(QMainWindow):
                     self.paths.append(val)
                     self.fnames.append(fname)
                     self.list.addItem(fname)
-            self.updateButtonStatus()
-    
+            self.update_button_status()
+
     def down(self):
         rowIndex = self.list.currentRow()
+
         if rowIndex < self.list.count() - 1:
             item = self.list.takeItem(rowIndex)
             self.list.insertItem(rowIndex + 1, item)
             self.list.setCurrentItem(item)
-    
+
     def up(self):
         rowIndex = self.list.currentRow()
+
         if rowIndex > 0:
             item = self.list.takeItem(rowIndex)
             self.list.insertItem(rowIndex - 1, item)
@@ -115,19 +118,19 @@ class MergeWindows(QMainWindow):
     def remove(self):
         rowIndex = self.list.currentRow()
         self.list.takeItem(rowIndex)
-        self.updateButtonStatus()
+        self.update_button_status()
 
     def remove_all(self):
         self.list.clear()
-        self.updateButtonStatus()
+        self.update_button_status()
 
-    def setButtonConnections(self): #tester ca
-        self.list.itemSelectionChanged.connect(self.updateButtonStatus)
+    def set_button_connections(self):  # tester ca
+        self.list.itemSelectionChanged.connect(self.update_button_status)
 
-
-    def updateButtonStatus(self):
+    def update_button_status(self):
         self.button_up.setDisabled(not bool(self.list.selectedItems()) or self.list.currentRow() == 0)
-        self.button_down.setDisabled(not bool(self.list.selectedItems()) or self.list.currentRow() == self.list.count() - 1)
+        self.button_down.setDisabled(
+            not bool(self.list.selectedItems()) or self.list.currentRow() == self.list.count() - 1)
         self.button_remove.setDisabled(not bool(self.list.selectedItems()) or self.list.count() == 0)
         self.button_remove_all.setDisabled(self.list.count() == 0)
         self.button_merge.setDisabled(self.list.count() == 0 or self.textBox.text() == "")
@@ -136,22 +139,20 @@ class MergeWindows(QMainWindow):
         merger = PdfFileMerger()
         for val in self.paths:
             merger.append(val, import_bookmarks=False)
-        
+
         merger.write(self.textBox.text())
         merger.close()
         QMessageBox.information(self, "Fusion", "Fusion terminé avec succès !")
 
     def browse_file(self):
-        self.browseFilePath, _ = QFileDialog.getSaveFileName(self, "Selectioner un fichier", "", "PDF(*.pdf);;All Files(*.*) ")
- 
+        self.browseFilePath, _ = QFileDialog.getSaveFileName(self, "Selectioner un fichier", "",
+                                                             "PDF(*.pdf);;All Files(*.*) ")
+
         if self.browseFilePath == "":
             return
         else:
             self.textBox.setText(self.browseFilePath)
-            self.updateButtonStatus()
-
-
-
+            self.update_button_status()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls:
@@ -166,37 +167,36 @@ class MergeWindows(QMainWindow):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
             event.accept()
-        
+
         elif event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
             QListWidget.dragMoveEvent(self.list, event)
-            
+
         else:
             event.ignore()
 
     def dropEvent(self, event):
-        item  = self.list.currentItem()
+        item = self.list.currentItem()
         row = self.list.row(item)
+
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
             event.accept()
-
 
             for url in event.mimeData().urls():
                 if url.isLocalFile() and url.toLocalFile().endswith(".pdf"):
                     path = url.toLocalFile()
                     fname = QUrl(url).fileName()
+
                     if path not in self.paths:
                         self.paths.append(path)
                         self.fnames.append(fname)
                         self.list.addItem(fname)
                 else:
                     event.ignore()
-            self.updateButtonStatus()
-            
-
+            self.update_button_status()
         elif event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
             QListWidget.dropEvent(self.list, event)
             self.paths.insert(self.list.currentRow(), self.paths.pop(row))
-            self.updateButtonStatus()             
+            self.update_button_status()
         else:
             event.ignore()
