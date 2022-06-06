@@ -1,9 +1,8 @@
 from genericpath import isdir
-from PyPDF2 import PdfFileMerger
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+
 from PyQt5.QtCore import *
-import os
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 from Gui.GeneralWindow import GeneralWindow
 
