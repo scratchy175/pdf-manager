@@ -54,11 +54,13 @@ class SplitWindow(QMainWindow):
         self.checkboxSplit.setGeometry(100, 100, 200, 30)
         self.checkboxSplit.move(100, 300)
         self.checkboxSplit.setToolTip("Découper les pages")
+        self.checkboxSplit.stateChanged.connect(self.checkboxchanged)
 
-        self.checkboxextract = QCheckBox("Extraire les pages", self)
-        self.checkboxextract.setGeometry(100, 100, 200, 30)
-        self.checkboxextract.move(100, 350)
-        self.checkboxextract.setToolTip("Extraire les pages")
+        self.checkboxExtract = QCheckBox("Extraire les pages", self)
+        self.checkboxExtract.setGeometry(100, 100, 200, 30)
+        self.checkboxExtract.move(100, 350)
+        self.checkboxExtract.setToolTip("Extraire les pages")
+        self.checkboxSplit.stateChanged.connect(self.checkboxchanged)
 
         self.textSplit = QLineEdit(self)
         self.textSplit.setGeometry(100, 100, 300, 30)
@@ -93,7 +95,22 @@ class SplitWindow(QMainWindow):
         self.textBrowse.dragMoveEvent= self.dragMoveEvent
         self.textBrowse.dropEvent = self.dropEventDir
 
+    def checkboxchanged(self):
+        if self.checkboxSplit.isChecked():
+            self.textSplit.setEnabled(True)
+            #self.checkboxExtract.setChecked(False)
+        else:
+            self.textSplit.setEnabled(False)
+
+        if self.checkboxExtract.isChecked():
+            self.textExtract.setEnabled(True)
+            #self.checkboxSplit.setChecked(False)
+        else:
+            self.textExtract.setEnabled(False)
         
+
+
+
     def select_dir(self):
         self.browseDirPath = QFileDialog.getExistingDirectory(self, "Selectioner un dossier", "", QFileDialog.ShowDirsOnly)
         if self.browseDirPath == "":
