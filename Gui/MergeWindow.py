@@ -6,7 +6,7 @@ from PyQt5.QtCore import *
 from Gui.GeneralWindow import GeneralWindow
 
 
-class MergeWindow(GeneralWindow):
+class MergeWindow(QMainWindow,GeneralWindow):
     def __init__(self):
         super().__init__()
         self.paths = []
@@ -14,19 +14,12 @@ class MergeWindow(GeneralWindow):
         self.initUI()
 
     def initUI(self):
-        title = "Fusionner des fichiers PDF"
-        top = 400
-        left = 400
-        width = 800
-        height = 600
-
         self.setWindowIcon(QIcon("logo.png"))
-        self.setWindowTitle(title)
-        self.setGeometry(top, left, width, height)
+        self.setWindowTitle("Fusionner")
+        self.setFixedSize(800, 600)
         self.center()
 
         button_select_file = QPushButton("Ajouter", self)
-        # button_select_file.setGeometry(200,100, 60, 35)
         button_select_file.move(100, 50)
         button_select_file.setToolTip("Ajouter un fichier à la liste")
         button_select_file.clicked.connect(self.select_file)
@@ -145,7 +138,7 @@ class MergeWindow(GeneralWindow):
         QMessageBox.information(self, "Fusion", "Fusion terminé avec succès !")
 
     def browse_file(self):
-        self.browseFilePath, _ = QFileDialog.getSaveFileName(self, "Selectioner un fichier", "",
+        self.browseFilePath, _ = QFileDialog.getSaveFileName(self, "Sélectionner un fichier", "",
                                                              "PDF(*.pdf);;All Files(*.*) ")
 
         if self.browseFilePath == "":
