@@ -6,27 +6,45 @@ from PyQt5.QtCore import *
 from Gui.GeneralWindow import GeneralWindow
 
 
-class MergeWindow(QMainWindow,GeneralWindow):
-    def __init__(self):
+class MergeWindow(QMainWindow, GeneralWindow):
+    def __init__(self, main_window):
         super().__init__()
+        self.main_window = main_window
         self.paths = []
         self.fnames = []
-        self.initUI()
-
-    def initUI(self):
         self.setWindowIcon(QIcon("logo.png"))
         self.setWindowTitle("Fusionner")
-        self.setFixedSize(800, 600)
+        self.setFixedSize(600, 530)
         self.center()
 
         button_select_file = QPushButton("Ajouter", self)
-        button_select_file.move(100, 50)
+        button_select_file.move(50, 20)
         button_select_file.setToolTip("Ajouter un fichier à la liste")
         button_select_file.clicked.connect(self.select_file)
 
+        self.button_down = QPushButton("Descendre", self)
+        self.button_down.move(150, 20)
+        self.button_down.setToolTip("Descendre le fichier sélectionné")
+        self.button_down.clicked.connect(self.down)
+
+        self.button_up = QPushButton("Monter", self)
+        self.button_up.move(250, 20)
+        self.button_up.setToolTip("Remonter le fichier sélectionné")
+        self.button_up.clicked.connect(self.up)
+
+        self.button_remove = QPushButton("Supprimer", self)
+        self.button_remove.move(350, 20)
+        self.button_remove.setToolTip("Supprimer le fichier sélectionné")
+        self.button_remove.clicked.connect(self.remove)
+
+        self.button_remove_all = QPushButton("Supprimer tout", self)
+        self.button_remove_all.move(450, 20)
+        self.button_remove_all.setToolTip("Supprimer tous les fichiers de la liste")
+        self.button_remove_all.clicked.connect(self.remove_all)
+
         self.list = QListWidget(self)
         self.list.setGeometry(100, 150, 500, 300)
-        self.list.move(100, 100)
+        self.list.move(50, 70)
 
         self.list.dragEnterEvent = self.dragEnterEvent
         self.list.dragMoveEvent = self.dragMoveEvent
@@ -34,57 +52,45 @@ class MergeWindow(QMainWindow,GeneralWindow):
 
         self.list.setDragDropMode(QAbstractItemView.InternalMove)
 
-        self.button_down = QPushButton("Descendre", self)
-        self.button_down.move(200, 50)
-        self.button_down.setToolTip("Descendre le fichier sélectionné")
-        self.button_down.clicked.connect(self.down)
+        label = QLabel(self)
+        label.setText("Fichier de destination :")
+        label.setGeometry(100, 450, 300, 30)
+        label.move(50, 390)
 
-        self.button_up = QPushButton("Monter", self)
-        self.button_up.move(300, 50)
-        self.button_up.setToolTip("Remonter le fichier sélectionné")
-        self.button_up.clicked.connect(self.up)
+        self.textBox = QLineEdit(self)
+        self.textBox.setGeometry(100, 100, 400, 30)
+        self.textBox.setPlaceholderText("Sélectionner un fichier : [*.pdf]")
+        self.textBox.move(50, 420)
 
-        self.button_remove = QPushButton("Supprimer", self)
-        self.button_remove.move(400, 50)
-        self.button_remove.setToolTip("Supprimer le fichier sélectionné")
-        self.button_remove.clicked.connect(self.remove)
+        button_browse = QPushButton("Parcourir", self)
+        button_browse.move(450, 420)
+        button_browse.setToolTip("Parcourir pour choisir le fichier de destination")
+        button_browse.clicked.connect(self.browse_file)
 
-        self.button_remove_all = QPushButton("Supprimer tout", self)
-        self.button_remove_all.move(500, 50)
-        self.button_remove_all.setToolTip("Supprimer tous les fichiers de la liste")
-        self.button_remove_all.clicked.connect(self.remove_all)
-
-        self.button_merge = QPushButton("Fusionner", self)
-        self.button_merge.move(100, 500)
+        self.button_merge = QPushButton("Exécuter", self)
+        self.button_merge.move(self.geometry().width() - self.button_merge.geometry().width() - 10, self.geometry().height() - 40)
         self.button_merge.setToolTip("Fusionner les fichiers sélectionnés")
         self.button_merge.clicked.connect(self.merge)
 
-        self.buttonBrowse = QPushButton("Parcourir", self)
-        self.buttonBrowse.move(600, 450)
-        self.buttonBrowse.setToolTip("Parcourir pour choisir le fichier de destination")
-        self.buttonBrowse.clicked.connect(self.browse_file)
+        button_back = QPushButton("< Retour", self)
+        button_back.move(10, self.geometry().height() - 40)
+        button_back.setToolTip("Retourner au menu principal")
+        button_back.clicked.connect(self.showMain)
 
-        self.update_button_status()
         self.set_button_connections()
+        self.update_button_status()
 
-        self.label = QLabel(self)
-        self.label.setText("Fichier de destination :")
-        self.label.setGeometry(100, 450, 300, 30)
-        self.label.move(100, 420)
-
-        self.textBox = QLineEdit(self)
-        self.textBox.setGeometry(100, 100, 500, 30)
-        self.textBox.setPlaceholderText("Sélectionner un fichier : [*.pdf]")
-        self.textBox.move(100, 450)
+    def showMain(self):
+        self.main_window.show()
+        self.close()
 
     def select_file(self):
-        self.filePath, _ = QFileDialog.getOpenFileNames(self, "Sélectionner les fichiers à ajouter", "", "PDF(*.pdf)")
+        filePath, _ = QFileDialog.getOpenFileNames(self, "Sélectionner les fichiers à ajouter", "", "PDF(*.pdf)")
 
-        if self.filePath == "":
+        if filePath == "":
             return
         else:
-            print(self.filePath)
-            for val in self.filePath:
+            for val in filePath:
                 fname = QUrl(val).fileName()
                 if val not in self.paths:
                     self.paths.append(val)
@@ -117,19 +123,19 @@ class MergeWindow(QMainWindow,GeneralWindow):
         self.list.clear()
         self.update_button_status()
 
-    def set_button_connections(self):  # tester ca
+    def set_button_connections(self):
         self.list.itemSelectionChanged.connect(self.update_button_status)
 
     def update_button_status(self):
         self.button_up.setDisabled(not bool(self.list.selectedItems()) or self.list.currentRow() == 0)
-        self.button_down.setDisabled(
-            not bool(self.list.selectedItems()) or self.list.currentRow() == self.list.count() - 1)
+        self.button_down.setDisabled(not bool(self.list.selectedItems()) or self.list.currentRow() == self.list.count() - 1)
         self.button_remove.setDisabled(not bool(self.list.selectedItems()) or self.list.count() == 0)
         self.button_remove_all.setDisabled(self.list.count() == 0)
         self.button_merge.setDisabled(self.list.count() == 0 or self.textBox.text() == "")
 
     def merge(self):
         merger = PdfFileMerger()
+
         for val in self.paths:
             merger.append(val, import_bookmarks=False)
 
@@ -138,13 +144,12 @@ class MergeWindow(QMainWindow,GeneralWindow):
         QMessageBox.information(self, "Fusion", "Fusion terminé avec succès !")
 
     def browse_file(self):
-        self.browseFilePath, _ = QFileDialog.getSaveFileName(self, "Sélectionner un fichier", "",
-                                                             "PDF(*.pdf);;All Files(*.*) ")
+        browseFilePath, _ = QFileDialog.getSaveFileName(self, "Sélectionner un fichier", "", "PDF(*.pdf);;All Files(*.*) ")
 
-        if self.browseFilePath == "":
+        if browseFilePath == "":
             return
         else:
-            self.textBox.setText(self.browseFilePath)
+            self.textBox.setText(browseFilePath)
             self.update_button_status()
 
     def dragEnterEvent(self, event):
@@ -186,6 +191,7 @@ class MergeWindow(QMainWindow,GeneralWindow):
                         self.list.addItem(fname)
                 else:
                     event.ignore()
+
             self.update_button_status()
         elif event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
             QListWidget.dropEvent(self.list, event)
