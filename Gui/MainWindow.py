@@ -33,16 +33,16 @@ class MainWindow(GeneralWindow):
         layout.addWidget(button_rotate)
 
     def merge_window(self):
-        merge = MergeWindow(self)
-        merge.show()
+        self.merge = MergeWindow(self)
+        self.merge.show()
         self.close()
 
     def split_window(self):
-        split = SplitWindow(self)
-        split.show()
+        self.split = SplitWindow(self)
+        self.split.show()
         self.close()
 
     def rotate_window(self):
-        rotate = RotateWindow(self)
-        rotate.show()
-        #self.close()
+        self.rotate = RotateWindow(self)
+        self.rotate.show()
+        self.close()

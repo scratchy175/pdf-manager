@@ -1,3 +1,5 @@
+import os.path
+
 from PyPDF2 import PdfFileMerger
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -92,10 +94,12 @@ class MergeWindow(QMainWindow, GeneralWindow):
         else:
             for val in filePath:
                 fname = QUrl(val).fileName()
+
                 if val not in self.paths:
                     self.paths.append(val)
                     self.fnames.append(fname)
                     self.list.addItem(fname)
+
             self.update_button_status()
 
     def down(self):
@@ -125,13 +129,14 @@ class MergeWindow(QMainWindow, GeneralWindow):
 
     def set_button_connections(self):
         self.list.itemSelectionChanged.connect(self.update_button_status)
+        self.textBox.textChanged.connect(self.update_button_status)
 
     def update_button_status(self):
         self.button_up.setDisabled(not bool(self.list.selectedItems()) or self.list.currentRow() == 0)
         self.button_down.setDisabled(not bool(self.list.selectedItems()) or self.list.currentRow() == self.list.count() - 1)
         self.button_remove.setDisabled(not bool(self.list.selectedItems()) or self.list.count() == 0)
         self.button_remove_all.setDisabled(self.list.count() == 0)
-        self.button_merge.setDisabled(self.list.count() == 0 or self.textBox.text() == "")
+        self.button_merge.setEnabled(self.list.count() != 0 and self.textBox.text() != "" and os.path.isdir(self.textBox.text()))
 
     def merge(self):
         merger = PdfFileMerger()
@@ -155,7 +160,6 @@ class MergeWindow(QMainWindow, GeneralWindow):
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls:
             event.accept()
-
         elif event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
             QListWidget.dragEnterEvent(self.list, event)
         else:
@@ -165,10 +169,8 @@ class MergeWindow(QMainWindow, GeneralWindow):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
             event.accept()
-
         elif event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
             QListWidget.dragMoveEvent(self.list, event)
-
         else:
             event.ignore()
 

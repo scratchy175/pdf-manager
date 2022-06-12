@@ -1,4 +1,8 @@
+import os
+from os import path
+
 from PyPDF2 import *
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
@@ -11,7 +15,7 @@ class RotateWindow(QMainWindow, GeneralWindow):
         self.main_window = main_window
         self.setWindowIcon(QIcon("logo.png"))
         self.setWindowTitle("Pivoter")
-        self.setFixedSize(600, 530)
+        self.setFixedSize(600, 450)
         self.center()
 
         labelSelect = QLabel(self)
@@ -20,55 +24,82 @@ class RotateWindow(QMainWindow, GeneralWindow):
         labelSelect.move(50, 20)
 
         self.textSelect = QLineEdit(self)
-        self.textSelect.setGeometry(100, 100, 500, 30)
+        self.textSelect.setGeometry(100, 100, 400, 30)
         self.textSelect.setPlaceholderText("Sélectionner un fichier : [*.pdf]")
         self.textSelect.move(50, 50)
 
+        self.textSelect.dragEnterEvent = self.dragEnterEvent
+        self.textSelect.dragMoveEvent = self.dragMoveEvent
+        self.textSelect.dropEvent = self.dropEventFile
+
         buttonSelect = QPushButton("Parcourir", self)
-        buttonSelect.move(550, 50)
+        buttonSelect.move(450, 50)
         buttonSelect.setToolTip("Sélectionner le fichier à traiter")
         buttonSelect.clicked.connect(self.browse_file)
 
-        labelSelect = QLabel(self)
-        labelSelect.setText("Pages à pivoter :")
-        labelSelect.setGeometry(100, 450, 300, 30)
-        labelSelect.move(50, 100)
+        labelPages = QLabel(self)
+        labelPages.setText("Pages à pivoter :")
+        labelPages.setGeometry(100, 450, 300, 30)
+        labelPages.move(50, 100)
 
         self.checkboxPages = QCheckBox("Toutes", self)
         self.checkboxPages.setGeometry(100, 100, 200, 30)
-        self.checkboxPages.move(50, 150)
+        self.checkboxPages.move(50, 130)
         self.checkboxPages.setToolTip("Toutes les pages")
         self.checkboxPages.stateChanged.connect(self.checkboxAllPages)
 
         self.textPagesToRotate = QLineEdit(self)
         self.textPagesToRotate.setGeometry(100, 100, 300, 30)
         self.textPagesToRotate.setPlaceholderText("Pages à pivoter (ex: 1-5,7,9-12)")
-        self.textPagesToRotate.move(100, 150)
+        self.textPagesToRotate.move(130, 130)
         self.textPagesToRotate.setEnabled(False)
 
-        self.checkboxRotateRight = QCheckBox("Pivoter à droite", self)
+        labelRotate = QLabel(self)
+        labelRotate.setText("Rotation :")
+        labelRotate.setGeometry(100, 450, 300, 30)
+        labelRotate.move(50, 180)
+
+        self.checkboxRotateRight = QRadioButton("Pivoter de 90° à droite", self)
         self.checkboxRotateRight.setGeometry(100, 100, 200, 30)
-        self.checkboxRotateRight.move(50, 130)
+        self.checkboxRotateRight.move(50, 210)
         self.checkboxRotateRight.setToolTip("Sélectionner le pivot à droite")
-        self.checkboxRotateRight.stateChanged.connect(self.checkboxRotation)
+        self.checkboxRotateRight.toggled.connect(self.radioButtonRotation)
 
-        self.checkboxRotateLeft = QCheckBox("Pivoter à gauche", self)
+        self.checkboxRotateLeft = QRadioButton("Pivoter de 90° à gauche", self)
         self.checkboxRotateLeft.setGeometry(100, 100, 200, 30)
-        self.checkboxRotateLeft.move(50, 130)
+        self.checkboxRotateLeft.move(50, 240)
         self.checkboxRotateLeft.setToolTip("Sélectionner le pivot à gauche")
-        self.checkboxRotateLeft.stateChanged.connect(self.checkboxRotation)
+        self.checkboxRotateLeft.toggled.connect(self.radioButtonRotation)
 
-        self.checkboxRotatePersonnalised = QCheckBox("Pivot personnalisé", self)
+        self.checkboxRotatePersonnalised = QRadioButton("Rotation personnalisée", self)
         self.checkboxRotatePersonnalised.setGeometry(100, 100, 200, 30)
-        self.checkboxRotatePersonnalised.move(50, 130)
+        self.checkboxRotatePersonnalised.move(50, 270)
         self.checkboxRotatePersonnalised.setToolTip("Sélectionner un pivot personnalisé")
-        self.checkboxRotatePersonnalised.stateChanged.connect(self.checkboxRotation)
+        self.checkboxRotatePersonnalised.toggled.connect(self.radioButtonRotation)
 
         self.textRotate = QLineEdit(self)
         self.textRotate.setGeometry(100, 100, 300, 30)
-        self.textRotate.setPlaceholderText("Choisir le pivot en degré (ex: 180)")
-        self.textRotate.move(200, 160)
+        self.textRotate.setPlaceholderText("Choisir la rotation en degré (ex: 180)")
+        self.textRotate.move(200, 270)
         self.textRotate.setEnabled(False)
+
+        label = QLabel(self)
+        label.setText("Dossier de destination :")
+        label.setGeometry(60, 450, 300, 30)
+        label.move(50, 320)
+
+        self.textBrowse = QLineEdit(self)
+        self.textBrowse.setGeometry(100, 100, 400, 30)
+        self.textBrowse.setPlaceholderText("Sélectionner un dossier")
+        self.textBrowse.move(50, 350)
+        self.textBrowse.dragEnterEvent = self.dragEnterEvent
+        self.textBrowse.dragMoveEvent = self.dragMoveEvent
+        self.textBrowse.dropEvent = self.dropEventDir
+
+        buttonBrowse = QPushButton("Parcourir", self)
+        buttonBrowse.move(450, 350)
+        buttonBrowse.setToolTip("Sélectionner un dossier de destination")
+        buttonBrowse.clicked.connect(self.select_dir)
 
         self.button_rotate = QPushButton("Exécuter", self)
         self.button_rotate.move(self.geometry().width() - self.button_rotate.geometry().width() - 10, self.geometry().height() - 40)
@@ -81,6 +112,7 @@ class RotateWindow(QMainWindow, GeneralWindow):
         button_back.clicked.connect(self.showMain)
 
         self.set_button_connections()
+        self.checkboxPages.setChecked(True)
         self.checkboxRotateRight.setChecked(True)
 
     def showMain(self):
@@ -94,39 +126,65 @@ class RotateWindow(QMainWindow, GeneralWindow):
 
     def checkboxAllPages(self):
         self.update_button_status()
+        self.textPagesToRotate.setDisabled(self.checkboxPages.isChecked())
 
-        if self.checkboxRotateRight.isChecked():
-            self.textPagesToRotate.setEnabled(False)
-            self.checkboxRotateLeft.setChecked(False)
-            self.checkboxRotatePersonnalised.setChecked(False)
-        elif self.checkboxRotateLeft.isChecked():
-            self.textPagesToRotate.setEnabled(False)
-            self.checkboxRotateRight.setChecked(False)
-            self.checkboxRotatePersonnalised.setChecked(False)
-        else:
-            self.checkboxRotateLeft.setChecked(False)
-            self.checkboxRotateRight.setChecked(False)
-            self.textPagesToRotate.setEnabled(True)
-
-    def checkboxRotation(self):
+    def radioButtonRotation(self):
         self.update_button_status()
-
-        if self.checkboxPages.isChecked():
-            self.textPagesToRotate.setEnabled(True)
-        else:
-            self.textPagesToRotate.setEnabled(False)
+        self.textRotate.setEnabled(self.checkboxRotatePersonnalised.isChecked())
 
     def update_button_status(self):
-        self.button_rotate.setDisabled(self.textSelect == "" or (self.checkboxRotatePersonnalised.isChecked() and self.textRotate == "") or (self.checkboxPages.isChecked() and self.textPagesToRotate == ""))
+        self.button_rotate.setEnabled((self.textSelect.text() != "" and path.isfile(self.textSelect.text())) and
+                                      (self.checkboxPages.isChecked() or self.textPagesToRotate.text() != "") and
+                                      (self.checkboxRotateRight.isChecked() or self.checkboxRotateLeft.isChecked() or (self.checkboxRotatePersonnalised.isChecked() and self.textRotate.text() != "")) and
+                                      (self.textBrowse.text() != "" and path.isdir(self.textBrowse.text())))
 
     def browse_file(self):
-        browseFilePath, _ = QFileDialog.getSaveFileName(self, "Sélectionner un fichier", "", "PDF(*.pdf);;All Files(*.*) ")
+        browseFilePath, _ = QFileDialog.getOpenFileName(self, "Sélectionner un fichier", "", "PDF(*.pdf)")
 
         if browseFilePath == "":
             return
         else:
             self.textSelect.setText(browseFilePath)
             self.update_button_status()
+
+    def select_dir(self):
+        selectDirPath = QFileDialog.getExistingDirectory(self, "Sélectionner un dossier", "", QFileDialog.ShowDirsOnly)
+
+        if selectDirPath == "":
+            return
+        else:
+            self.textBrowse.setText(selectDirPath)
+            self.update_button_status()
+
+    def dropEventFile(self, event):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+            urls = event.mimeData().urls()
+            filePath = urls[0].toLocalFile()
+
+            if len(urls) == 1:
+                if filePath and filePath.endswith(".pdf"):
+                    self.textSelect.setText(filePath)
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+    def dropEventDir(self, event):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+            urls = event.mimeData().urls()
+            pathDir = urls[0].toLocalFile()
+
+            if len(urls) == 1:
+                if os.path.isdir(pathDir):
+                    self.textBrowse.setText(pathDir)
+            else:
+                event.ignore()
+        else:
+            event.ignore()
 
     def rotate(self):
         output_writer = PdfFileWriter()
@@ -161,7 +219,7 @@ class RotateWindow(QMainWindow, GeneralWindow):
                     else:
                         output_writer.addPage(getRotatedPage(readInput, rotation, int(index[i]) - 1))
 
-            outputStream = open(self.textSelect.text() + "/PDFManager_Rotate.pdf", "wb")
+            outputStream = open(self.textBrowse.text() + "/PDFManager_Rotate.pdf", "wb")
             output_writer.write(outputStream)
             outputStream.close()
 

@@ -14,7 +14,7 @@ class SplitWindow(QMainWindow, GeneralWindow):
         self.main_window = main_window
         self.setWindowIcon(QIcon("logo.png"))
         self.setWindowTitle("Découper ou Extraire")
-        self.setFixedSize(700, 360)
+        self.setFixedSize(600, 320)
         self.center()
 
         labelSelect = QLabel(self)
@@ -23,7 +23,7 @@ class SplitWindow(QMainWindow, GeneralWindow):
         labelSelect.move(50, 20)
 
         self.textSelect = QLineEdit(self)
-        self.textSelect.setGeometry(100, 100, 500, 30)
+        self.textSelect.setGeometry(100, 100, 400, 30)
         self.textSelect.setPlaceholderText("Sélectionner un fichier : [*.pdf]")
         self.textSelect.move(50, 50)
 
@@ -32,49 +32,49 @@ class SplitWindow(QMainWindow, GeneralWindow):
         self.textSelect.dropEvent = self.dropEventFile
 
         buttonSelect = QPushButton("Parcourir", self)
-        buttonSelect.move(550, 50)
+        buttonSelect.move(450, 50)
         buttonSelect.setToolTip("Sélectionner le fichier à traiter")
         buttonSelect.clicked.connect(self.browse_file)
 
-        self.checkboxSplit = QCheckBox("Découpage du fichier", self)
-        self.checkboxSplit.setGeometry(100, 100, 200, 30)
-        self.checkboxSplit.move(50, 130)
-        self.checkboxSplit.setToolTip("Découpage du fichier")
-        self.checkboxSplit.stateChanged.connect(self.checkboxchangedS)
+        self.radioButtonSplit = QRadioButton("Découpage du fichier", self)
+        self.radioButtonSplit.setGeometry(100, 100, 200, 30)
+        self.radioButtonSplit.move(50, 100)
+        self.radioButtonSplit.setToolTip("Découpage du fichier")
+        self.radioButtonSplit.toggled.connect(self.radioButtonChanged)
 
         self.textSplit = QLineEdit(self)
         self.textSplit.setGeometry(100, 100, 300, 30)
         self.textSplit.setPlaceholderText("Pages à découper (ex: 3,6)")
-        self.textSplit.move(200, 130)
+        self.textSplit.move(200, 100)
         self.textSplit.setEnabled(False)
 
-        self.checkboxExtract = QCheckBox("Extraction de pages", self)
-        self.checkboxExtract.setGeometry(100, 100, 200, 30)
-        self.checkboxExtract.move(50, 160)
-        self.checkboxExtract.setToolTip("Extraction de pages")
-        self.checkboxExtract.stateChanged.connect(self.checkboxchangedE)
+        self.radioButtonExtract = QRadioButton("Extraction de pages", self)
+        self.radioButtonExtract.setGeometry(100, 100, 200, 30)
+        self.radioButtonExtract.move(50, 130)
+        self.radioButtonExtract.setToolTip("Extraction de pages")
+        self.radioButtonExtract.toggled.connect(self.radioButtonChanged)
 
         self.textExtract = QLineEdit(self)
         self.textExtract.setGeometry(100, 100, 300, 30)
         self.textExtract.setPlaceholderText("Pages à extraire (ex: 1-5,7,9-12)")
-        self.textExtract.move(200, 160)
+        self.textExtract.move(200, 130)
         self.textExtract.setEnabled(False)
 
         label = QLabel(self)
         label.setText("Dossier de destination :")
         label.setGeometry(60, 450, 300, 30)
-        label.move(50, 220)
+        label.move(50, 180)
 
         self.textBrowse = QLineEdit(self)
-        self.textBrowse.setGeometry(100, 100, 500, 30)
+        self.textBrowse.setGeometry(100, 100, 400, 30)
         self.textBrowse.setPlaceholderText("Sélectionner un dossier")
-        self.textBrowse.move(50, 250)
+        self.textBrowse.move(50, 210)
         self.textBrowse.dragEnterEvent = self.dragEnterEvent
         self.textBrowse.dragMoveEvent = self.dragMoveEvent
         self.textBrowse.dropEvent = self.dropEventDir
 
         buttonBrowse = QPushButton("Parcourir", self)
-        buttonBrowse.move(550, 250)
+        buttonBrowse.move(450, 210)
         buttonBrowse.setToolTip("Sélectionner un dossier de destination")
         buttonBrowse.clicked.connect(self.select_dir)
 
@@ -96,38 +96,15 @@ class SplitWindow(QMainWindow, GeneralWindow):
         self.close()
 
     def set_button_connections(self):
+        self.textSelect.textChanged.connect(self.update_button_status)
         self.textSplit.textChanged.connect(self.update_button_status)
         self.textExtract.textChanged.connect(self.update_button_status)
         self.textBrowse.textChanged.connect(self.update_button_status)
 
-    def checkboxchangedS(self):
+    def radioButtonChanged(self):
         self.update_button_status()
-
-        if self.checkboxSplit.isChecked():
-            self.checkboxExtract.setChecked(False)
-            self.textSplit.setEnabled(True)
-        else:
-            self.textSplit.clear()
-            self.textSplit.setEnabled(False)
-
-    def checkboxchangedE(self):
-        self.update_button_status()
-
-        if self.checkboxExtract.isChecked():
-            self.textExtract.setEnabled(True)
-            self.checkboxSplit.setChecked(False)
-        else:
-            self.textExtract.clear()
-            self.textExtract.setEnabled(False)
-
-    def select_dir(self):
-        selectDirPath = QFileDialog.getExistingDirectory(self, "Sélectionner un dossier", "", QFileDialog.ShowDirsOnly)
-
-        if selectDirPath == "":
-            return
-        else:
-            self.textBrowse.setText(selectDirPath)
-            self.update_button_status()
+        self.textSplit.setEnabled(self.radioButtonSplit.isChecked())
+        self.textExtract.setEnabled(self.radioButtonExtract.isChecked())
 
     def browse_file(self):
         browseFilePath, _ = QFileDialog.getOpenFileName(self, "Sélectionner un fichier", "", "PDF(*.pdf)")
@@ -138,31 +115,31 @@ class SplitWindow(QMainWindow, GeneralWindow):
             self.textSelect.setText(browseFilePath)
             self.update_button_status()
 
+    def select_dir(self):
+        selectDirPath = QFileDialog.getExistingDirectory(self, "Sélectionner un dossier", "", QFileDialog.ShowDirsOnly)
+
+        if selectDirPath == "":
+            return
+        else:
+            self.textBrowse.setText(selectDirPath)
+            self.update_button_status()
+
     def update_button_status(self):
-        self.buttonSplit.setDisabled(self.textBrowse.text() == "" or self.textSelect.text() == "" or self.textSplit.text() == "" and self.textExtract.text() == "")
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls:
-            event.accept()
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.setDropAction(Qt.CopyAction)
-            event.accept()
-        else:
-            event.ignore()
+        self.buttonSplit.setEnabled((self.textSelect.text() != "" and os.path.isfile(self.textSelect.text())) and
+                                    (self.textBrowse.text() != "" and os.path.isdir(self.textBrowse.text())) and
+                                    (self.radioButtonSplit.isChecked() and self.textSplit.text() != "") or
+                                    (self.radioButtonExtract.isChecked() and self.textExtract.text() != ""))
 
     def dropEventFile(self, event):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
             event.accept()
             urls = event.mimeData().urls()
-            path = urls[0].toLocalFile()
+            filePath = urls[0].toLocalFile()
+
             if len(urls) == 1:
-                if path and path.endswith(".pdf"):
-                    self.textSelect.setText(path)
+                if filePath and filePath.endswith(".pdf"):
+                    self.textSelect.setText(filePath)
             else:
                 event.ignore()
         else:
@@ -173,10 +150,11 @@ class SplitWindow(QMainWindow, GeneralWindow):
             event.setDropAction(Qt.CopyAction)
             event.accept()
             urls = event.mimeData().urls()
-            path = urls[0].toLocalFile()
+            pathDir = urls[0].toLocalFile()
+
             if len(urls) == 1:
-                if os.path.isdir(path):
-                    self.textBrowse.setText(path)
+                if os.path.isdir(pathDir):
+                    self.textBrowse.setText(pathDir)
             else:
                 event.ignore()
         else:
@@ -189,7 +167,7 @@ class SplitWindow(QMainWindow, GeneralWindow):
             QMessageBox.critical(self, "Erreur", "Fichier invalide")
             return
 
-        if self.checkboxSplit.isChecked():
+        if self.radioButtonSplit.isChecked():
             index = self.textSplit.text().split(",")
             index.insert(0, str(0))
             index.append(str(readInput.getNumPages()))
