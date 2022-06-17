@@ -130,6 +130,22 @@ class SplitWindow(QMainWindow, GeneralWindow):
                                     (self.radioButtonSplit.isChecked() and self.textSplit.text() != "") or
                                     (self.radioButtonExtract.isChecked() and self.textExtract.text() != ""))
 
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls:
+            event.accept()
+        else:
+            event.ignore()
+
+
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+        else:
+            event.ignore()
+
+
     def dropEventFile(self, event):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
@@ -145,6 +161,7 @@ class SplitWindow(QMainWindow, GeneralWindow):
         else:
             event.ignore()
 
+
     def dropEventDir(self, event):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
@@ -159,6 +176,7 @@ class SplitWindow(QMainWindow, GeneralWindow):
                 event.ignore()
         else:
             event.ignore()
+
 
     def split(self):
         try:

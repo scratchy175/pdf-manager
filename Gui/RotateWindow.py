@@ -142,6 +142,21 @@ class RotateWindow(QMainWindow, GeneralWindow):
             self.textBrowse.setText(selectDirPath)
             self.update_button_status()
 
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls:
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+        else:
+            event.ignore()
+
+
     def dropEventFile(self, event):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
