@@ -62,26 +62,17 @@ class RotateWindow(QMainWindow, GeneralWindow):
         self.checkboxRotateRight = QRadioButton("Pivoter de 90° à droite", self)
         self.checkboxRotateRight.setGeometry(100, 100, 200, 30)
         self.checkboxRotateRight.move(50, 210)
-        self.checkboxRotateRight.setToolTip("Sélectionner le pivot à droite")
-        self.checkboxRotateRight.toggled.connect(self.radioButtonRotation)
+        self.checkboxRotateRight.setToolTip("Sélectionner la rotation à droite")
 
         self.checkboxRotateLeft = QRadioButton("Pivoter de 90° à gauche", self)
         self.checkboxRotateLeft.setGeometry(100, 100, 200, 30)
         self.checkboxRotateLeft.move(50, 240)
-        self.checkboxRotateLeft.setToolTip("Sélectionner le pivot à gauche")
-        self.checkboxRotateLeft.toggled.connect(self.radioButtonRotation)
+        self.checkboxRotateLeft.setToolTip("Sélectionner la rotation à gauche")
 
-        self.checkboxRotatePersonnalised = QRadioButton("Rotation personnalisée", self)
-        self.checkboxRotatePersonnalised.setGeometry(100, 100, 200, 30)
-        self.checkboxRotatePersonnalised.move(50, 270)
-        self.checkboxRotatePersonnalised.setToolTip("Sélectionner un pivot personnalisé")
-        self.checkboxRotatePersonnalised.toggled.connect(self.radioButtonRotation)
-
-        self.textRotate = QLineEdit(self)
-        self.textRotate.setGeometry(100, 100, 300, 30)
-        self.textRotate.setPlaceholderText("Choisir la rotation en degré (ex: 180)")
-        self.textRotate.move(200, 270)
-        self.textRotate.setEnabled(False)
+        self.checkboxRotateInversed = QRadioButton("Pivoter de 180°", self)
+        self.checkboxRotateInversed.setGeometry(100, 100, 200, 30)
+        self.checkboxRotateInversed.move(50, 270)
+        self.checkboxRotateInversed.setToolTip("Sélectionner la rotation de 180°")
 
         label = QLabel(self)
         label.setText("Dossier de destination :")
@@ -102,7 +93,8 @@ class RotateWindow(QMainWindow, GeneralWindow):
         buttonBrowse.clicked.connect(self.select_dir)
 
         self.button_rotate = QPushButton("Exécuter", self)
-        self.button_rotate.move(self.geometry().width() - self.button_rotate.geometry().width() - 10, self.geometry().height() - 40)
+        self.button_rotate.move(self.geometry().width() - self.button_rotate.geometry().width() - 10,
+                                self.geometry().height() - 40)
         self.button_rotate.setToolTip("Pivoter les pages sélectionnées")
         self.button_rotate.clicked.connect(self.rotate)
 
@@ -122,20 +114,14 @@ class RotateWindow(QMainWindow, GeneralWindow):
     def set_button_connections(self):
         self.textSelect.textChanged.connect(self.update_button_status)
         self.textPagesToRotate.textChanged.connect(self.update_button_status)
-        self.textRotate.textChanged.connect(self.update_button_status)
 
     def checkboxAllPages(self):
         self.update_button_status()
         self.textPagesToRotate.setDisabled(self.checkboxPages.isChecked())
 
-    def radioButtonRotation(self):
-        self.update_button_status()
-        self.textRotate.setEnabled(self.checkboxRotatePersonnalised.isChecked())
-
     def update_button_status(self):
         self.button_rotate.setEnabled((self.textSelect.text() != "" and path.isfile(self.textSelect.text())) and
                                       (self.checkboxPages.isChecked() or self.textPagesToRotate.text() != "") and
-                                      (self.checkboxRotateRight.isChecked() or self.checkboxRotateLeft.isChecked() or (self.checkboxRotatePersonnalised.isChecked() and self.textRotate.text() != "")) and
                                       (self.textBrowse.text() != "" and path.isdir(self.textBrowse.text())))
 
     def browse_file(self):
@@ -189,13 +175,14 @@ class RotateWindow(QMainWindow, GeneralWindow):
     def rotate(self):
         output_writer = PdfFileWriter()
         rotation = 0
+        error = 0
 
         if self.checkboxRotateLeft.isChecked():
             rotation = -90
         elif self.checkboxRotateRight.isChecked():
             rotation = 90
-        elif self.checkboxRotatePersonnalised.isChecked():
-            rotation = self.textRotate
+        elif self.checkboxRotateInversed.isChecked():
+            rotation = 180
 
         if rotation == 0:
             QMessageBox.information(self, "Pivotement", "Pas de rotation à effectuer")
@@ -206,30 +193,89 @@ class RotateWindow(QMainWindow, GeneralWindow):
 
             if self.checkboxPages.isChecked():
                 for i in list(range(0, readInput.numPages)):
-                    output_writer.addPage(getRotatedPage(readInput, rotation, i))
+                    output_writer.addPage(readInput.getPage(i).rotateClockwise(rotation))
             else:
                 index = self.textPagesToRotate.text().split(",")
 
                 for i in range(len(index)):
-                    if "-" in index[i]:
-                        start, end = index[i].split("-")
+                    try:
+                        if "-" in index[i]:
+                            start, end = index[i].split("-")
+                            start = checkPage(start, readInput.numPages)
+                            end = checkPage(end, readInput.numPages)
 
-                        for j in range(int(start), int(end) + 1):
-                            output_writer.addPage(getRotatedPage(readInput, rotation, j - 1))
-                    else:
-                        output_writer.addPage(getRotatedPage(readInput, rotation, int(index[i]) - 1))
+                            if i == 0 and start > 1:
+                                for j in range(0, start - 1):
+                                    output_writer.addPage(readInput.getPage(j))
 
-            outputStream = open(self.textBrowse.text() + "/PDFManager_Rotate.pdf", "wb")
-            output_writer.write(outputStream)
-            outputStream.close()
+                            for j in range(start, end + 1):
+                                output_writer.addPage(readInput.getPage(j - 1).rotateClockwise(rotation))
 
-        QMessageBox.information(self, "Pivotement", "Fichier pivoté avec succès !")
+                            if i == len(index) - 1:
+                                if end < readInput.numPages:
+                                    for j in range(end, readInput.numPages):
+                                        output_writer.addPage(readInput.getPage(j))
+                            else:
+                                printUntilNext(readInput, output_writer, index, end, i)
+                        else:
+                            pageNum = checkIndexPage(index, i, readInput.numPages)
+
+                            if i == 0 and int(index[0]) > 1:
+                                for j in range(0, pageNum - 1):
+                                    output_writer.addPage(readInput.getPage(j))
+
+                            output_writer.addPage(readInput.getPage(pageNum - 1).rotateClockwise(rotation))
+
+                            if i == len(index) - 1:
+                                if pageNum < readInput.numPages:
+                                    for j in range(pageNum, readInput.numPages):
+                                        output_writer.addPage(readInput.getPage(j))
+                            else:
+                                printUntilNext(readInput, output_writer, index, pageNum, i)
+                    except PageValueError:
+                        QMessageBox.warning(self, "Numéro de page invalide", "Veuillez entrer des numéros de page valide")
+                        error = 1
+
+            if error != 1:
+                outputStream = open(self.textBrowse.text() + "/PDFManager_Rotate.pdf", "wb")
+                output_writer.write(outputStream)
+                outputStream.close()
+                QMessageBox.information(self, "Pivotement", "Fichier pivoté avec succès !")
 
 
-def getRotatedPage(read_input, rotation, i):
-    if rotation > 0:
-        page = read_input.getPage(i).rotateClockwise(rotation)
+def printUntilNext(read_input, output_writer, index, end, i):
+    if "-" in index[i + 1]:
+        nextStart, nextEnd = index[i + 1].split("-")
+        nextStart = checkPage(nextStart, read_input.numPages)
+
+        if end < nextStart - 1:
+            for j in range(end, nextStart - 1):
+                output_writer.addPage(read_input.getPage(j))
     else:
-        page = read_input.getPage(i).rotateCounterClockwise(rotation)
+        nextPage = checkIndexPage(index, i + 1, read_input.numPages)
 
-    return page
+        if end < nextPage:
+            for j in range(end, nextPage - 1):
+                output_writer.addPage(read_input.getPage(j))
+
+
+def checkPage(page, max_page):
+    int_page = int(page)
+
+    if 0 < int_page <= max_page:
+        return int_page
+    else:
+        raise PageValueError
+
+
+def checkIndexPage(index, i, max_page):
+    page = int(index[i])
+
+    if 0 < page <= max_page:
+        return page
+    else:
+        raise PageValueError
+
+
+class PageValueError(Exception):
+    pass
