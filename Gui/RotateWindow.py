@@ -1,8 +1,7 @@
 import os
-from os import path
 
 from PyPDF2 import *
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
@@ -49,6 +48,7 @@ class RotateWindow(QMainWindow, GeneralWindow):
         self.checkboxPages.stateChanged.connect(self.checkboxAllPages)
 
         self.textPagesToRotate = QLineEdit(self)
+        self.textPagesToRotate.setValidator(QRegExpValidator(QRegExp("\\d+((\\,|\\-)\\d+)+")))
         self.textPagesToRotate.setGeometry(100, 100, 300, 30)
         self.textPagesToRotate.setPlaceholderText("Pages à pivoter (ex: 1-5,7,9-12)")
         self.textPagesToRotate.move(130, 130)
@@ -120,9 +120,9 @@ class RotateWindow(QMainWindow, GeneralWindow):
         self.textPagesToRotate.setDisabled(self.checkboxPages.isChecked())
 
     def update_button_status(self):
-        self.button_rotate.setEnabled((self.textSelect.text() != "" and path.isfile(self.textSelect.text())) and
+        self.button_rotate.setEnabled((self.textSelect.text() != "" and os.path.isfile(self.textSelect.text())) and
                                       (self.checkboxPages.isChecked() or self.textPagesToRotate.text() != "") and
-                                      (self.textBrowse.text() != "" and path.isdir(self.textBrowse.text())))
+                                      (self.textBrowse.text() != "" and os.path.isdir(self.textBrowse.text())))
 
     def browse_file(self):
         browseFilePath, _ = QFileDialog.getOpenFileName(self, "Sélectionner un fichier", "", "PDF(*.pdf)")
@@ -142,7 +142,6 @@ class RotateWindow(QMainWindow, GeneralWindow):
             self.textBrowse.setText(selectDirPath)
             self.update_button_status()
 
-
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls:
             event.accept()
@@ -155,7 +154,6 @@ class RotateWindow(QMainWindow, GeneralWindow):
             event.accept()
         else:
             event.ignore()
-
 
     def dropEventFile(self, event):
         if event.mimeData().hasUrls():
@@ -211,45 +209,38 @@ class RotateWindow(QMainWindow, GeneralWindow):
                     output_writer.addPage(readInput.getPage(i).rotateClockwise(rotation))
             else:
                 index = self.textPagesToRotate.text().split(",")
+                pageSet = set(())
 
-                for i in range(len(index)):
-                    try:
-                        if "-" in index[i]:
-                            start, end = index[i].split("-")
-                            start = checkPage(start, readInput.numPages)
-                            end = checkPage(end, readInput.numPages)
+                for page in index:
+                    if "-" in page:
+                        start, end = page.split("-")
 
-                            if i == 0 and start > 1:
-                                for j in range(0, start - 1):
+                        for i in range(int(start), int(end) + 1):
+                            pageSet.add(i)
+                    else:
+                        pageSet.add(int(page))
+
+                sortedList = sorted(pageSet)
+
+                try:
+                    for page in range(len(sortedList)):
+                        pageNum = checkIndexPage(sortedList, page, readInput.numPages)
+
+                        if page == 0 and int(sortedList[0]) > 1:
+                            for j in range(0, pageNum - 1):
+                                output_writer.addPage(readInput.getPage(j))
+
+                        output_writer.addPage(readInput.getPage(pageNum - 1).rotateClockwise(rotation))
+
+                        if page == len(sortedList) - 1:
+                            if pageNum < readInput.numPages:
+                                for j in range(pageNum, readInput.numPages):
                                     output_writer.addPage(readInput.getPage(j))
-
-                            for j in range(start, end + 1):
-                                output_writer.addPage(readInput.getPage(j - 1).rotateClockwise(rotation))
-
-                            if i == len(index) - 1:
-                                if end < readInput.numPages:
-                                    for j in range(end, readInput.numPages):
-                                        output_writer.addPage(readInput.getPage(j))
-                            else:
-                                printUntilNext(readInput, output_writer, index, end, i)
                         else:
-                            pageNum = checkIndexPage(index, i, readInput.numPages)
-
-                            if i == 0 and int(index[0]) > 1:
-                                for j in range(0, pageNum - 1):
-                                    output_writer.addPage(readInput.getPage(j))
-
-                            output_writer.addPage(readInput.getPage(pageNum - 1).rotateClockwise(rotation))
-
-                            if i == len(index) - 1:
-                                if pageNum < readInput.numPages:
-                                    for j in range(pageNum, readInput.numPages):
-                                        output_writer.addPage(readInput.getPage(j))
-                            else:
-                                printUntilNext(readInput, output_writer, index, pageNum, i)
-                    except PageValueError:
-                        QMessageBox.warning(self, "Numéro de page invalide", "Veuillez entrer des numéros de page valide")
-                        error = 1
+                            printUntilNext(readInput, output_writer, sortedList, pageNum, page)
+                except PageValueError:
+                    QMessageBox.warning(self, "Numéro de page invalide", "Veuillez entrer des numéros de page valide")
+                    error = 1
 
             if error != 1:
                 outputStream = open(self.textBrowse.text() + "/PDFManager_Rotate.pdf", "wb")
@@ -258,33 +249,16 @@ class RotateWindow(QMainWindow, GeneralWindow):
                 QMessageBox.information(self, "Pivotement", "Fichier pivoté avec succès !")
 
 
-def printUntilNext(read_input, output_writer, index, end, i):
-    if "-" in index[i + 1]:
-        nextStart, nextEnd = index[i + 1].split("-")
-        nextStart = checkPage(nextStart, read_input.numPages)
+def printUntilNext(read_input, output_writer, sorted_list, end, i):
+    nextPage = checkIndexPage(sorted_list, i + 1, read_input.numPages)
 
-        if end < nextStart - 1:
-            for j in range(end, nextStart - 1):
-                output_writer.addPage(read_input.getPage(j))
-    else:
-        nextPage = checkIndexPage(index, i + 1, read_input.numPages)
-
-        if end < nextPage:
-            for j in range(end, nextPage - 1):
-                output_writer.addPage(read_input.getPage(j))
+    if end < nextPage:
+        for j in range(end, nextPage - 1):
+            output_writer.addPage(read_input.getPage(j))
 
 
-def checkPage(page, max_page):
-    int_page = int(page)
-
-    if 0 < int_page <= max_page:
-        return int_page
-    else:
-        raise PageValueError
-
-
-def checkIndexPage(index, i, max_page):
-    page = int(index[i])
+def checkIndexPage(sorted_list, i, max_page):
+    page = int(sorted_list[i])
 
     if 0 < page <= max_page:
         return page

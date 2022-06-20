@@ -130,13 +130,11 @@ class SplitWindow(QMainWindow, GeneralWindow):
                                     (self.radioButtonSplit.isChecked() and self.textSplit.text() != "") or
                                     (self.radioButtonExtract.isChecked() and self.textExtract.text() != ""))
 
-
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls:
             event.accept()
         else:
             event.ignore()
-
 
     def dragMoveEvent(self, event):
         if event.mimeData().hasUrls():
