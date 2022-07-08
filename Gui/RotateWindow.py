@@ -26,7 +26,7 @@ class RotateWindow(GeneralWindow):
         self.checkboxPages.stateChanged.connect(self.checkboxAllPages)
 
         self.textPagesToRotate = CustomLineEdit("Pages à pivoter (ex: 1-5,7,9-12)", False)
-        self.textPagesToRotate.setValidator(QRegExpValidator(QRegExp("[1-9]\\d*((\\,|\\-)[1-9]\\d*)+")))
+        self.textPagesToRotate.setValidator(QRegExpValidator(QRegExp("(([1-9]\\d*,)|([1-9]\\d*-[1-9]\\d*,))+")))
         self.textPagesToRotate.textChanged.connect(self.update_button_status)
         self.textPagesToRotate.setMaximumWidth(100)
 
@@ -63,9 +63,11 @@ class RotateWindow(GeneralWindow):
     def checkboxAllPages(self):
         self.textPagesToRotate.setDisabled(self.checkboxPages.isChecked())
         self.update_button_status()
+        if self.checkboxPages.isChecked():
+            self.textPagesToRotate.clear()
 
     def update_button_status(self):
-        self.button_exec.setEnabled(self.check_select_status() and (self.checkboxPages.isChecked() or self.textPagesToRotate.text() != ""))
+        self.button_exec.setEnabled(self.check_select_status() and (self.checkboxPages.isChecked() or (self.textPagesToRotate.text() != "" and self.textPagesToRotate.text()[-1].isdigit())))
 
     def rotate(self):
         outpath = QFileDialog.getSaveFileName(self, "Sélectionner le fichier de sortie", "", "PDF(*.pdf)")[0]

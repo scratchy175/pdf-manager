@@ -24,7 +24,7 @@ class SplitWindow(GeneralWindow):
 
         self.textSplit = CustomLineEdit("Pages à découper (ex: 3,6)", False)
         self.textSplit.textChanged.connect(self.update_button_status)
-        self.textSplit.setValidator(QRegExpValidator(QRegExp("[1-9]\\d*(\\,[1-9]\\d*)+")))
+        self.textSplit.setValidator(QRegExpValidator(QRegExp("([1-9]\\d*,)+")))
         self.textSplit.setMaximumWidth(100)
 
         self.radioButtonExtract = QRadioButton("Extraction de pages", self)
@@ -33,7 +33,7 @@ class SplitWindow(GeneralWindow):
 
         self.textExtract = CustomLineEdit("Pages à extraire (ex: 1-5,7,9-12)", False)
         self.textExtract.textChanged.connect(self.update_button_status)
-        self.textExtract.setValidator(QRegExpValidator(QRegExp("[1-9]\\d*((\\,|\\-)[1-9]\\d*)+")))
+        self.textExtract.setValidator(QRegExpValidator(QRegExp("(([1-9]\\d*,)|([1-9]\\d*-[1-9]\\d*,))+")))
         self.textExtract.setMaximumWidth(100)
 
         layout.addWidget(self.radioButtonSplit, 3, 0)
@@ -50,8 +50,8 @@ class SplitWindow(GeneralWindow):
 
     def update_button_status(self):
         self.button_exec.setEnabled((self.check_select_status()) and
-                                    ((self.radioButtonSplit.isChecked() and self.textSplit.text() != "") or
-                                    (self.radioButtonExtract.isChecked() and self.textExtract.text() != "")))
+                                    ((self.radioButtonSplit.isChecked() and self.textSplit.text() != "" and self.textSplit.text()[-1].isdigit()) or
+                                    (self.radioButtonExtract.isChecked() and self.textExtract.text() != "" and self.textExtract.text()[-1].isdigit())))
 
     def radioButtonChanged(self):
         self.update_button_status()
