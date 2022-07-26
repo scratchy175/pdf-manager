@@ -50,9 +50,8 @@ class GeneralWindow(QWidget):
 
         if browseFilePath == "":
             return
-        else:
-            self.textSelect.setText(browseFilePath)
-            self.update_button_status()
+        self.textSelect.setText(browseFilePath)
+        self.update_button_status()
 
     def check_select_status(self):
         return self.textSelect.text() != "" and os.path.isfile(self.textSelect.text())

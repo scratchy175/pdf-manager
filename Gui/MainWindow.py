@@ -2,7 +2,7 @@ from Gui.MergeWindow import MergeWindow
 from Gui.RotateWindow import RotateWindow
 from Gui.SplitWindow import SplitWindow
 from Gui.GeneralWindow import GeneralWindow
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout
 
 
@@ -21,14 +21,17 @@ class MainWindow(GeneralWindow):
 
         button_merge = QPushButton("Fusionner", self)
         button_merge.clicked.connect(self.merge_window)
+        button_merge.setFont(QFont("Roboto", 20))
         button_merge.setMinimumSize(200, 50)
 
         button_split = QPushButton("Découper / Extraire", self)
         button_split.clicked.connect(self.split_window)
+        button_split.setFont(QFont("Roboto", 20))
         button_split.setMinimumSize(200, 50)
 
         button_rotate = QPushButton("Pivoter", self)
         button_rotate.clicked.connect(self.rotate_window)
+        button_rotate.setFont(QFont("Roboto", 20))
         button_rotate.setMinimumSize(200, 50)
 
         layout = QVBoxLayout()

@@ -16,7 +16,7 @@ class SplitWindow(GeneralWindow):
         self.setLayout(layout)
         layout.setContentsMargins(50, 50, 50, 50)
         self.setup_select(layout, 0)
-        self.setup_back_exec(layout, 6, self.split)
+        self.setup_back_exec(layout, 6, self.exec)
 
         self.radioButtonSplit = QRadioButton("Découpage du fichier", self)
         self.radioButtonSplit.setToolTip("Découpage du fichier")
@@ -62,46 +62,49 @@ class SplitWindow(GeneralWindow):
         elif self.radioButtonExtract.isChecked():
             self.textSplit.clear()
 
-    def split(self):
+    def exec(self):
+        readInput = PdfReader(self.textSelect.text())
         outpath = QFileDialog.getSaveFileName(self, "Sélectionner le fichier de sortie", "", "PDF(*.pdf)")[0]
         if outpath == "":
-            return
-
-        readInput = PdfReader(self.textSelect.text())
-
+            return 
         try:
             if self.radioButtonSplit.isChecked():
-                index = self.textSplit.text().split(",")
-                sortedlist = sorted(set(index))
-                sortedlist.insert(0, str(0))
-                sortedlist.append(str(readInput.getNumPages()))
-
-                for i in range(len(sortedlist) - 1):
-                    output = PdfFileWriter()
-
-                    for j in range(int(sortedlist[i]), int(sortedlist[i + 1])):
-                        output.addPage(readInput.getPage(j))
-
-                    root = os.path.splitext(outpath)[0]
-                    outputStream = open(root + str(i) + ".pdf", "wb")
-                    output.write(outputStream)
-                    outputStream.close()
-
-                QMessageBox.information(self, "Découpage", "Fichier découpé avec succès")
-
+                self.split(readInput, outpath)
             elif self.radioButtonExtract.isChecked():
-                output = PdfFileWriter()
-                index = self.textExtract.text().split(",")
-                for i in range(len(index)):
-                    if "-" in index[i]:
-                        start, end = index[i].split("-")
-                        for j in range(int(start), int(end) + 1):
-                            output.addPage(readInput.getPage(j - 1))
-                    else:
-                        output.addPage(readInput.getPage(int(index[i]) - 1))
-                outputStream = open(outpath, "wb")
-                output.write(outputStream)
-                outputStream.close()
-                QMessageBox.information(self, "Extraction", "Fichier(s) extrait(s) avec succès.")
+                self.extract(readInput, outpath)
         except IndexError:
             QMessageBox.warning(self, "Erreur", "Erreur lors du découpage.")
+
+
+    def split(self, readInput, outpath):
+        index = self.textSplit.text().split(",")
+        sortedlist = sorted(set(index))
+        sortedlist.insert(0, str(0))
+        sortedlist.append(str(readInput.getNumPages()))
+
+        for i in range(len(sortedlist) - 1):
+            output = PdfFileWriter()
+
+            for j in range(int(sortedlist[i]), int(sortedlist[i + 1])):
+                output.addPage(readInput.getPage(j))
+
+            root = os.path.splitext(outpath)[0]
+            with open(root + str(i) + ".pdf", "wb") as outputStream:
+                output.write(outputStream)
+
+        QMessageBox.information(self, "Découpage", "Fichier découpé avec succès")
+    
+
+    def extract(self, readInput, outpath):
+        output = PdfFileWriter()
+        index = self.textExtract.text().split(",")
+        for i in range(len(index)):
+            if "-" in index[i]:
+                start, end = index[i].split("-")
+                for j in range(int(start), int(end) + 1):
+                    output.addPage(readInput.getPage(j - 1))
+            else:
+                output.addPage(readInput.getPage(int(index[i]) - 1))
+        with open(outpath, "wb") as outputStream:
+            output.write(outputStream)
+        QMessageBox.information(self, "Extraction", "Fichier(s) extrait(s) avec succès.")

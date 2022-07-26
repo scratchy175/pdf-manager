@@ -49,16 +49,12 @@ class MergeWindow(GeneralWindow):
 
         if filePath == "":
             return
-        else:
-            for val in filePath:
-                fname = QUrl(val).fileName()
+        for val in filePath:
+            fname = QUrl(val).fileName()
 
-                if val not in self.paths:
-                    self.paths.append(val)
-                    self.fnames.append(fname)
-                    self.list.addItem(fname)
-
-            self.update_button_status()
+            if val not in self.paths:
+                self.addtolists(val, fname)
+        self.update_button_status()
 
     def down(self):
         rowIndex = self.list.currentRow()
@@ -123,9 +119,7 @@ class MergeWindow(GeneralWindow):
                     fname = QUrl(url).fileName()
 
                     if path not in self.paths:
-                        self.paths.append(path)
-                        self.fnames.append(fname)
-                        self.list.addItem(fname)
+                        self.addtolists(path, fname)
                 else:
                     event.ignore()
 
@@ -136,3 +130,9 @@ class MergeWindow(GeneralWindow):
             self.update_button_status()
         else:
             event.ignore()
+
+
+    def addtolists(self, arg0, fname):
+        self.paths.append(arg0)
+        self.fnames.append(fname)
+        self.list.addItem(fname)

@@ -92,7 +92,7 @@ class RotateWindow(GeneralWindow):
             readInput = PdfFileReader(inputStream)
 
             if self.checkboxPages.isChecked():
-                for i in list(range(0, readInput.numPages)):
+                for i in list(range(readInput.numPages)):
                     output_writer.addPage(readInput.getPage(i).rotateClockwise(rotation))
             else:
                 index = self.textPagesToRotate.text().split(",")
@@ -114,7 +114,7 @@ class RotateWindow(GeneralWindow):
                         pageNum = checkIndexPage(sortedList, page, readInput.numPages)
 
                         if page == 0 and int(sortedList[0]) > 1:
-                            for j in range(0, pageNum - 1):
+                            for j in range(pageNum - 1):
                                 output_writer.addPage(readInput.getPage(j))
 
                         output_writer.addPage(readInput.getPage(pageNum - 1).rotateClockwise(rotation))
@@ -130,9 +130,8 @@ class RotateWindow(GeneralWindow):
                     error = 1
 
             if error != 1:
-                outputStream = open(outpath, "wb")
-                output_writer.write(outputStream)
-                outputStream.close()
+                with open(outpath, "wb") as outputStream:
+                    output_writer.write(outputStream)
                 QMessageBox.information(self, "Pivotement", "Fichier pivoté avec succès !")
 
 
