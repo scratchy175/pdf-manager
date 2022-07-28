@@ -66,7 +66,7 @@ class SplitWindow(GeneralWindow):
         readInput = PdfReader(self.textSelect.text())
         outpath = QFileDialog.getSaveFileName(self, "Sélectionner le fichier de sortie", "", "PDF(*.pdf)")[0]
         if outpath == "":
-            return 
+            return
         try:
             if self.radioButtonSplit.isChecked():
                 self.split(readInput, outpath)
@@ -74,7 +74,6 @@ class SplitWindow(GeneralWindow):
                 self.extract(readInput, outpath)
         except IndexError:
             QMessageBox.warning(self, "Erreur", "Erreur lors du découpage.")
-
 
     def split(self, readInput, outpath):
         index = self.textSplit.text().split(",")
@@ -93,7 +92,6 @@ class SplitWindow(GeneralWindow):
                 output.write(outputStream)
 
         QMessageBox.information(self, "Découpage", "Fichier découpé avec succès")
-    
 
     def extract(self, readInput, outpath):
         output = PdfFileWriter()

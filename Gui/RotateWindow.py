@@ -70,87 +70,52 @@ class RotateWindow(GeneralWindow):
         self.button_exec.setEnabled(self.check_select_status() and (self.checkboxPages.isChecked() or (self.textPagesToRotate.text() != "" and self.textPagesToRotate.text()[-1].isdigit())))
 
     def rotate(self):
+        readInput = PdfFileReader(self.textSelect.text())
+        output_writer = PdfFileWriter()
+        if readInput.isEncrypted:
+            QMessageBox.warning(self, "Fichier encrypté", "Le fichier est encrypté, impossible de le pivoter")
+            return
+        nbpages = readInput.getNumPages()
+        rotation = self.selectedRotation()
         outpath = QFileDialog.getSaveFileName(self, "Sélectionner le fichier de sortie", "", "PDF(*.pdf)")[0]
         if outpath == "":
             return
-        output_writer = PdfFileWriter()
-        rotation = 0
-        error = 0
+        if self.checkboxPages.isChecked():
+            for i in range(nbpages):
+                output_writer.addPage(readInput.getPage(i).rotate(rotation))
+        else:
+            listPages = self.setupPagesToRotate()
+            self.checkIndex(listPages, nbpages)
+            for i in range(nbpages):
+                if i+1 in listPages:
+                    output_writer.addPage(readInput.getPage(i).rotate(rotation))
+                else:
+                    output_writer.addPage(readInput.getPage(i))
+        with open(outpath, "wb") as outputStream:
+            output_writer.write(outputStream)
+        QMessageBox.information(self, "Pivotement", "Fichier pivoté avec succès !")
 
-        if self.checkboxRotateLeft.isChecked():
-            rotation = -90
+    def selectedRotation(self):
+        if self.checkboxRotateLeft.isChecked(): 
+            return -90
         elif self.checkboxRotateRight.isChecked():
-            rotation = 90
+            return 90
         elif self.checkboxRotateInversed.isChecked():
-            rotation = 180
+            return 180
 
-        if rotation == 0:
-            QMessageBox.information(self, "Pivotement", "Pas de rotation à effectuer")
-            return
-
-        with open(self.textSelect.text(), "rb") as inputStream:
-            readInput = PdfFileReader(inputStream)
-
-            if self.checkboxPages.isChecked():
-                for i in list(range(readInput.numPages)):
-                    output_writer.addPage(readInput.getPage(i).rotateClockwise(rotation))
+    def setupPagesToRotate(self):
+        index = self.textPagesToRotate.text().split(",")
+        setPagesToRotate = set()
+        for val in index:
+            if "-" in val:
+                start, end = val.split("-")
+                for j in range(int(start), int(end) + 1):
+                    setPagesToRotate.add(j)
             else:
-                index = self.textPagesToRotate.text().split(",")
-                pageSet = set(())
+                setPagesToRotate.add(int(val))
+        return setPagesToRotate
 
-                for page in index:
-                    if "-" in page:
-                        start, end = page.split("-")
-
-                        for i in range(int(start), int(end) + 1):
-                            pageSet.add(i)
-                    else:
-                        pageSet.add(int(page))
-
-                sortedList = sorted(pageSet)
-
-                try:
-                    for page in range(len(sortedList)):
-                        pageNum = checkIndexPage(sortedList, page, readInput.numPages)
-
-                        if page == 0 and int(sortedList[0]) > 1:
-                            for j in range(pageNum - 1):
-                                output_writer.addPage(readInput.getPage(j))
-
-                        output_writer.addPage(readInput.getPage(pageNum - 1).rotateClockwise(rotation))
-
-                        if page == len(sortedList) - 1:
-                            if pageNum < readInput.numPages:
-                                for j in range(pageNum, readInput.numPages):
-                                    output_writer.addPage(readInput.getPage(j))
-                        else:
-                            printUntilNext(readInput, output_writer, sortedList, pageNum, page)
-                except PageValueError:
-                    QMessageBox.warning(self, "Numéro de page invalide", "Veuillez entrer des numéros de page valide")
-                    error = 1
-
-            if error != 1:
-                with open(outpath, "wb") as outputStream:
-                    output_writer.write(outputStream)
-                QMessageBox.information(self, "Pivotement", "Fichier pivoté avec succès !")
-
-
-def printUntilNext(read_input, output_writer, sorted_list, end, i):
-    nextPage = checkIndexPage(sorted_list, i + 1, read_input.numPages)
-
-    if end < nextPage:
-        for j in range(end, nextPage - 1):
-            output_writer.addPage(read_input.getPage(j))
-
-
-def checkIndexPage(sorted_list, i, max_page):
-    page = int(sorted_list[i])
-
-    if 0 < page <= max_page:
-        return page
-    else:
-        raise PageValueError
-
-
-class PageValueError(Exception):
-    pass
+    def checkIndex(self, listPages, nbpages):
+        if max(listPages) > nbpages:
+            QMessageBox.warning(self, "Numéro de page invalide", "Veuillez entrer des numéros de page valide")
+            return

@@ -131,7 +131,6 @@ class MergeWindow(GeneralWindow):
         else:
             event.ignore()
 
-
     def addtolists(self, arg0, fname):
         self.paths.append(arg0)
         self.fnames.append(fname)
