@@ -1,9 +1,9 @@
 import os
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QDesktopWidget, QWidget, QPushButton,
-                             QLabel, QLineEdit,
-                             QFileDialog, QListWidget)
+from PyQt5.QtWidgets import (QDesktopWidget, QFileDialog, QLabel, QLineEdit,
+                             QListWidget, QPushButton, QWidget)
 
 
 class GeneralWindow(QWidget):
@@ -55,6 +55,7 @@ class GeneralWindow(QWidget):
 
     def check_select_status(self):
         return self.textSelect.text() != "" and os.path.isfile(self.textSelect.text())
+    
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls:
@@ -106,4 +107,3 @@ class CustomButton(QPushButton):
         self.setText(self.title)
         self.clicked.connect(self.function)
         self.setFixedSize(100, 30)
-        # self.setMinimumSize(500,50)

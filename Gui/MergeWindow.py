@@ -1,7 +1,8 @@
 from PyPDF2 import PdfFileMerger
-from PyQt5.QtWidgets import (QListWidget, QGridLayout, QFileDialog,
-                             QAbstractItemView, QMessageBox)
 from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtWidgets import (QAbstractItemView, QFileDialog, QGridLayout,
+                             QListWidget, QMessageBox)
+
 from Gui.GeneralWindow import CustomButton, GeneralWindow
 
 
@@ -11,6 +12,7 @@ class MergeWindow(GeneralWindow):
         self.paths = []
         self.fnames = []
         self.setWindowTitle("Fusionner")
+        self.setMaximumWidth(0)
         self.center()
 
         button_select_file = CustomButton("Ajouter", self.select_file)
@@ -105,6 +107,11 @@ class MergeWindow(GeneralWindow):
         merger.close()
         QMessageBox.information(self, "Fusion", "Fusion terminé avec succès !")
 
+    def addtolists(self, arg0, fname):
+        self.paths.append(arg0)
+        self.fnames.append(fname)
+        self.list.addItem(fname)    
+    
     def dropEvent(self, event):
         item = self.list.currentItem()
         row = self.list.row(item)
@@ -131,7 +138,4 @@ class MergeWindow(GeneralWindow):
         else:
             event.ignore()
 
-    def addtolists(self, arg0, fname):
-        self.paths.append(arg0)
-        self.fnames.append(fname)
-        self.list.addItem(fname)
+    

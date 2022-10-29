@@ -9,3 +9,4 @@ Gui/__pycache__/
 /build/
 /PDFManager.spec
 /dist/
+__pycache__/utils.cpython-310.pyc

@@ -1,15 +1,18 @@
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from PyQt5.QtCore import QRegExp
 from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtWidgets import (QGridLayout, QLabel, QCheckBox,
-                             QRadioButton, QFileDialog, QMessageBox)
+from PyQt5.QtWidgets import (QCheckBox, QFileDialog, QGridLayout, QLabel,
+                             QMessageBox, QRadioButton)
+
 from Gui.GeneralWindow import CustomLineEdit, GeneralWindow
+from utils import *
 
 
 class RotateWindow(GeneralWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Pivoter")
+        self.setMaximumHeight(0)
         self.center()
 
         layout = QGridLayout()
@@ -21,8 +24,7 @@ class RotateWindow(GeneralWindow):
         labelPages = QLabel(self)
         labelPages.setText("Pages à pivoter :")
 
-        self.checkboxPages = QCheckBox("Toutes", self)
-        self.checkboxPages.setToolTip("Toutes les pages")
+        self.checkboxPages = QCheckBox("Toutes les pages", self)
         self.checkboxPages.stateChanged.connect(self.checkboxAllPages)
 
         self.textPagesToRotate = CustomLineEdit("Pages à pivoter (ex: 1-5,7,9-12)", False)
@@ -34,13 +36,11 @@ class RotateWindow(GeneralWindow):
         labelRotate.setText("Rotation :")
 
         self.checkboxRotateRight = QRadioButton("Pivoter de 90° à droite", self)
-        self.checkboxRotateRight.setToolTip("Sélectionner la rotation à droite")
 
         self.checkboxRotateLeft = QRadioButton("Pivoter de 90° à gauche", self)
-        self.checkboxRotateLeft.setToolTip("Sélectionner la rotation à gauche")
 
         self.checkboxRotateInversed = QRadioButton("Pivoter de 180°", self)
-        self.checkboxRotateInversed.setToolTip("Sélectionner la rotation de 180°")
+
 
         self.checkboxPages.setChecked(True)
         self.checkboxRotateRight.setChecked(True)
@@ -84,8 +84,9 @@ class RotateWindow(GeneralWindow):
             for i in range(nbpages):
                 output_writer.addPage(readInput.getPage(i).rotate(rotation))
         else:
-            listPages = self.setupPagesToRotate()
-            self.checkIndex(listPages, nbpages)
+            listPages = setupList(self.textPagesToRotate)
+            if checkIndex(self, listPages, nbpages):
+                return
             for i in range(nbpages):
                 if i+1 in listPages:
                     output_writer.addPage(readInput.getPage(i).rotate(rotation))
@@ -103,19 +104,4 @@ class RotateWindow(GeneralWindow):
         elif self.checkboxRotateInversed.isChecked():
             return 180
 
-    def setupPagesToRotate(self):
-        index = self.textPagesToRotate.text().split(",")
-        setPagesToRotate = set()
-        for val in index:
-            if "-" in val:
-                start, end = val.split("-")
-                for j in range(int(start), int(end) + 1):
-                    setPagesToRotate.add(j)
-            else:
-                setPagesToRotate.add(int(val))
-        return setPagesToRotate
-
-    def checkIndex(self, listPages, nbpages):
-        if max(listPages) > nbpages:
-            QMessageBox.warning(self, "Numéro de page invalide", "Veuillez entrer des numéros de page valide")
-            return
+    
