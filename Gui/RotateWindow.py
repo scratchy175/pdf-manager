@@ -1,10 +1,10 @@
-from PyPDF2 import PdfFileReader, PdfFileWriter
-from PyQt5.QtCore import QRegExp
-from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtWidgets import (QCheckBox, QFileDialog, QGridLayout, QLabel,
+from pikepdf import Pdf
+from PyQt6.QtCore import QRegularExpression
+from PyQt6.QtGui import QRegularExpressionValidator
+from PyQt6.QtWidgets import (QCheckBox, QFileDialog, QGridLayout, QLabel,
                              QMessageBox, QRadioButton)
 
-from Gui.GeneralWindow import CustomLineEdit, GeneralWindow
+from Gui.GeneralWindow import *
 from utils import *
 
 
@@ -18,7 +18,7 @@ class RotateWindow(GeneralWindow):
         layout = QGridLayout()
         self.setLayout(layout)
         layout.setContentsMargins(50, 50, 50, 50)
-        self.setup_select(layout, 0)
+        self.setup_select(layout, 0, self.update_button_status)
         self.setup_back_exec(layout, 11, self.rotate)
 
         labelPages = QLabel(self)
@@ -28,7 +28,7 @@ class RotateWindow(GeneralWindow):
         self.checkboxPages.stateChanged.connect(self.checkboxAllPages)
 
         self.textPagesToRotate = CustomLineEdit("Pages à pivoter (ex: 1-5,7,9-12)", False)
-        self.textPagesToRotate.setValidator(QRegExpValidator(QRegExp("(([1-9]\\d*,)|([1-9]\\d*-[1-9]\\d*,))+")))
+        self.textPagesToRotate.setValidator(QRegularExpressionValidator(QRegularExpression("(([1-9]\\d*,)|([1-9]\\d*-[1-9]\\d*,))+")))
         self.textPagesToRotate.textChanged.connect(self.update_button_status)
         self.textPagesToRotate.setMaximumWidth(100)
 
@@ -70,30 +70,30 @@ class RotateWindow(GeneralWindow):
         self.button_exec.setEnabled(self.check_select_status() and (self.checkboxPages.isChecked() or (self.textPagesToRotate.text() != "" and self.textPagesToRotate.text()[-1].isdigit())))
 
     def rotate(self):
-        readInput = PdfFileReader(self.textSelect.text())
-        output_writer = PdfFileWriter()
-        if readInput.isEncrypted:
+        readInput = Pdf.open(self.textSelect.text())
+        if readInput.is_encrypted:
             QMessageBox.warning(self, "Fichier encrypté", "Le fichier est encrypté, impossible de le pivoter")
             return
-        nbpages = readInput.getNumPages()
+        nbpages = readInput.pages
         rotation = self.selectedRotation()
         outpath = QFileDialog.getSaveFileName(self, "Sélectionner le fichier de sortie", "", "PDF(*.pdf)")[0]
         if outpath == "":
             return
         if self.checkboxPages.isChecked():
-            for i in range(nbpages):
-                output_writer.addPage(readInput.getPage(i).rotate(rotation))
+            for page in readInput.pages:
+                page.Rotate = rotation
         else:
             listPages = setupList(self.textPagesToRotate)
             if checkIndex(self, listPages, nbpages):
                 return
-            for i in range(nbpages):
+            for i,v in enumerate(listPages):
+                v.Rotate = rotation if i + 1 in listPages else 0
+            """for i in range(nbpages):
                 if i+1 in listPages:
-                    output_writer.addPage(readInput.getPage(i).rotate(rotation))
+                    output_writer.pages.append(readInput.pages(i).rotate(rotation))
                 else:
-                    output_writer.addPage(readInput.getPage(i))
-        with open(outpath, "wb") as outputStream:
-            output_writer.write(outputStream)
+                    output_writer.pages.append(readInput.getPage(i))"""
+        readInput.save(outpath)
         QMessageBox.information(self, "Pivotement", "Fichier pivoté avec succès !")
 
     def selectedRotation(self):

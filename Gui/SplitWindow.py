@@ -1,11 +1,10 @@
 import os
+from pikepdf import Pdf
+from PyQt6.QtCore import QRegularExpression
+from PyQt6.QtGui import QRegularExpressionValidator
+from PyQt6.QtWidgets import QFileDialog, QGridLayout, QMessageBox, QRadioButton
 
-from PyPDF2 import PdfFileReader, PdfFileWriter
-from PyQt5.QtCore import QRegExp
-from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtWidgets import QFileDialog, QGridLayout, QMessageBox, QRadioButton
-
-from Gui.GeneralWindow import CustomLineEdit, GeneralWindow
+from Gui.GeneralWindow import *
 from utils import *
 
 
@@ -19,7 +18,7 @@ class SplitWindow(GeneralWindow):
         layout = QGridLayout()
         self.setLayout(layout)
         layout.setContentsMargins(50, 50, 50, 50)
-        self.setup_select(layout, 0)
+        self.setup_select(layout, 0, self.update_button_status)
         self.setup_back_exec(layout, 7, self.exec)
 
         self.radioButtonSplit = QRadioButton("Découpage du fichier", self)
@@ -27,7 +26,7 @@ class SplitWindow(GeneralWindow):
 
         self.textSplit = CustomLineEdit("Pages à découper (ex: 3,6)", False)
         self.textSplit.textChanged.connect(self.update_button_status)
-        self.textSplit.setValidator(QRegExpValidator(QRegExp("([1-9]\\d*,)+")))
+        self.textSplit.setValidator(QRegularExpressionValidator(QRegularExpression("([1-9]\\d*,)+")))
         self.textSplit.setMaximumWidth(100)
 
         self.radioButtonExtract = QRadioButton("Extraction de pages", self)
@@ -35,7 +34,7 @@ class SplitWindow(GeneralWindow):
 
         self.textExtract = CustomLineEdit("Pages à extraire (ex: 1-5,7,9-12)", False)
         self.textExtract.textChanged.connect(self.update_button_status)
-        self.textExtract.setValidator(QRegExpValidator(QRegExp("(([1-9]\\d*,)|([1-9]\\d*-[1-9]\\d*,))+")))
+        self.textExtract.setValidator(QRegularExpressionValidator(QRegularExpression("(([1-9]\\d*,)|([1-9]\\d*-[1-9]\\d*,))+")))
         self.textExtract.setMaximumWidth(100)
 
         self.splitAll = QRadioButton("Découper toutes les pages", self)
@@ -72,7 +71,7 @@ class SplitWindow(GeneralWindow):
             self.textExtract.clear()
 
     def exec(self):
-        readInput = PdfFileReader(self.textSelect.text(), "rb")
+        readInput = Pdf.open(self.textSelect.text())
         outpath = QFileDialog.getSaveFileName(self, "Sélectionner le fichier de sortie", "", "PDF(*.pdf)")[0]
         if outpath == "":
             return
@@ -84,40 +83,37 @@ class SplitWindow(GeneralWindow):
             self.splitAllPages(readInput, outpath)
 
     def split(self, readInput, outpath):
-        nbpages = readInput.getNumPages()
+        nbpages = len(readInput.pages)
         listPages = setupList(self.textSplit)
         listPages.insert(0, 0)
         listPages.append(nbpages)
         if checkIndex(self, listPages, nbpages):
             return
         for i in range(len(listPages) - 1):
-            output = PdfFileWriter()
+            output = Pdf.new()
 
             for j in range(listPages[i], listPages[i + 1]):
-                output.addPage(readInput.getPage(j))
+                output.pages.append(readInput.pages[j])
 
             root = os.path.splitext(outpath)[0]
-            with open(root + str(i) + ".pdf", "wb") as outputStream:
-                output.write(outputStream)
+            output.save(root + str(i) + ".pdf")     
         QMessageBox.information(self, "Découpage", "Fichier découpé avec succès !")
 
     def extract(self, readInput, outpath):
-        output = PdfFileWriter()
-        nbpages = readInput.getNumPages()
+        output = Pdf.new()
+        nbpages = len(readInput.pages)
         listPages = setupList(self.textExtract)
         if checkIndex(self, listPages, nbpages):
             return 
         for i in range(len(listPages)):
-            output.addPage(readInput.getPage(listPages[i]))
-        with open(outpath, "wb") as outputStream:
-            output.write(outputStream)
+            output.pages.append(readInput.pages[listPages[i]])
+        output.save(outpath)
         QMessageBox.information(self, "Extraction", "Pages extraites avec succès !")
 
     def splitAllPages(self, readInput, outpath):   
-        for i in range(readInput.getNumPages()):
-            output = PdfFileWriter()
-            output.addPage(readInput.getPage(i))
+        for i in range(len(readInput.pages)):
+            output = Pdf.new()
+            output.pages.append(readInput.pages[i])
             root = os.path.splitext(outpath)[0]
-            with open(root + str(i) + ".pdf", "wb") as outputStream:
-                output.write(outputStream)
+            output.save(root + str(i) + ".pdf")
         QMessageBox.information(self, "Découpage", "Fichier découpé avec succès !")

@@ -1,9 +1,9 @@
-from PyPDF2 import PdfFileMerger
-from PyQt5.QtCore import Qt, QUrl
-from PyQt5.QtWidgets import (QAbstractItemView, QFileDialog, QGridLayout,
+from pikepdf import Pdf
+from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtWidgets import (QAbstractItemView, QFileDialog, QGridLayout,
                              QListWidget, QMessageBox)
 
-from Gui.GeneralWindow import CustomButton, GeneralWindow
+from Gui.GeneralWindow import *
 
 
 class MergeWindow(GeneralWindow):
@@ -28,9 +28,10 @@ class MergeWindow(GeneralWindow):
         self.list = QListWidget(self)
         self.list.itemSelectionChanged.connect(self.update_button_status)
         self.list.dragEnterEvent = self.dragEnterEvent
-        self.list.dragMoveEvent = self.dragMoveEvent
         self.list.dropEvent = self.dropEvent
-        self.list.setDragDropMode(QAbstractItemView.InternalMove)
+        self.list.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+
+
 
         layout = QGridLayout()
         self.setLayout(layout)
@@ -99,12 +100,11 @@ class MergeWindow(GeneralWindow):
         if outpath == "":
             return
 
-        merger = PdfFileMerger(strict=False)
-
+        pdf = Pdf.new()
         for val in self.paths:
-            merger.append(val, import_bookmarks=False)
-        merger.write(outpath)
-        merger.close()
+            source = Pdf.open(val)
+            pdf.pages.extend(source.pages)
+        pdf.save(outpath)
         QMessageBox.information(self, "Fusion", "Fusion terminé avec succès !")
 
     def addtolists(self, arg0, fname):
@@ -112,12 +112,19 @@ class MergeWindow(GeneralWindow):
         self.fnames.append(fname)
         self.list.addItem(fname)    
     
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasUrls or e.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
+            e.accept()
+        else:
+            e.ignore()
+
+
     def dropEvent(self, event):
         item = self.list.currentItem()
         row = self.list.row(item)
 
         if event.mimeData().hasUrls():
-            event.setDropAction(Qt.CopyAction)
+            event.setDropAction(Qt.DropAction.CopyAction)
             event.accept()
 
             for url in event.mimeData().urls():

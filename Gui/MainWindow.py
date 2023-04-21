@@ -1,5 +1,5 @@
-from PyQt5.QtGui import QFont, QIcon
-from PyQt5.QtWidgets import QPushButton, QVBoxLayout
+from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtWidgets import QPushButton, QVBoxLayout
 
 from Gui.GeneralWindow import GeneralWindow
 from Gui.MergeWindow import MergeWindow

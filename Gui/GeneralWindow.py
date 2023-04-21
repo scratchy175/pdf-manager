@@ -1,20 +1,19 @@
 import os
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QDesktopWidget, QFileDialog, QLabel, QLineEdit,
-                             QListWidget, QPushButton, QWidget)
+from PyQt6.QtGui import QIcon, QScreen 
+from PyQt6.QtWidgets import (QFileDialog, QLabel, QLineEdit,
+                            QPushButton, QWidget, QApplication)
 
 
 class GeneralWindow(QWidget):
     def __init__(self, main_window):
         super().__init__()
+        
         self.main_window = main_window
         self.setWindowIcon(QIcon("logo.png"))
 
     def center(self):
         qtRectangle = self.frameGeometry()
-        centerPoint = QDesktopWidget().availableGeometry().center()
+        centerPoint = QScreen.availableGeometry(QApplication.primaryScreen()).center()
         qtRectangle.moveCenter(centerPoint)
         self.move(qtRectangle.topLeft())
 
@@ -30,14 +29,11 @@ class GeneralWindow(QWidget):
         self.close()
         self.main_window.show()
 
-    def setup_select(self, layout, row):
-        labelSelect = QLabel(self, text="Fichier à traiter :")
+    def setup_select(self, layout, row, update_button_status):
+        labelSelect = QLabel(text="Fichier à traiter :")
 
         self.textSelect = CustomLineEdit("Sélectionner un fichier : [*.pdf]")
-        self.textSelect.textChanged.connect(self.update_button_status)
-        self.textSelect.dragEnterEvent = self.dragEnterEvent
-        self.textSelect.dragMoveEvent = self.dragMoveEvent
-        self.textSelect.dropEvent = self.dropEventFile
+        self.textSelect.textChanged.connect(update_button_status)
 
         buttonSelect = CustomButton("Parcourir", self.select_file)
 
@@ -51,44 +47,10 @@ class GeneralWindow(QWidget):
         if browseFilePath == "":
             return
         self.textSelect.setText(browseFilePath)
-        self.update_button_status()
 
     def check_select_status(self):
         return self.textSelect.text() != "" and os.path.isfile(self.textSelect.text())
     
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls:
-            event.accept()
-        elif event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
-            QListWidget.dragEnterEvent(self.list, event)
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.setDropAction(Qt.CopyAction)
-            event.accept()
-        elif event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"):
-            QListWidget.dragMoveEvent(self.list, event)
-        else:
-            event.ignore()
-
-    def dropEventFile(self, event):
-        if event.mimeData().hasUrls():
-            event.setDropAction(Qt.CopyAction)
-            event.accept()
-            urls = event.mimeData().urls()
-            filePath = urls[0].toLocalFile()
-
-            if len(urls) == 1:
-                if filePath and filePath.endswith(".pdf"):
-                    self.textSelect.setText(filePath)
-            else:
-                event.ignore()
-        else:
-            event.ignore()
-
 
 class CustomLineEdit(QLineEdit):
     def __init__(self, placeholder, enabled=True):
