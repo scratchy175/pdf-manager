@@ -1,8 +1,41 @@
-Création de l'exe:
-```
-v1:
-pyinstaller --noconfirm --onedir --windowed --icon "C:/Users/yannt/pdf-manager/logo.ico" --name "PDFManager" --add-data "C:/Users/yannt/pdf-manager/Gui;Gui/" --hidden-import "PyPDF2" --hidden-import "PyQt5.QtWidgets" --add-data "C:/Users/yannt/pdf-manager/logo.png;."  "C:/Users/yannt/pdf-manager/Main.py"
+# PDFManager
 
-v2:
-pyinstaller --noconfirm --onedir --windowed --clean --icon "logo.ico" --name "PDFManager" --add-data "Gui;Gui/" --hidden-import "PyPDF2" --hidden-import "PyQt5.QtWidgets" --add-data "logo.png;." "Main.py"
+## Description
+
+PDFManager est un logiciel permettant de gérer des fichiers PDF.
+
+## Fonctionnalités
+
+- Fusionner des fichiers PDF
+- Séparer des pages d'un fichier PDF
+- Extraire des pages d'un fichier PDF
+- Tourner des pages d'un fichier PDF
+
+## Version exécutable
+
+### Création du fichier .exe
+```bash
+pyinstaller --noconfirm --onedir --windowed --clean --icon "logo.ico" --name "PDFManager" --add-data "Gui;Gui/" --copy-metadata pikepdf --add-data "logo.png;." "Main.py"
+```
+
+## Version python
+
+### Tout en un
+```bash
+make setup
+```
+
+### Création et activation de l'environnement virtuel
+```bash
+make activate
+```
+
+### Installation des dépendances
+```bash
+make install
+```
+
+### Lancement du programme
+```bash
+make run
 ```
