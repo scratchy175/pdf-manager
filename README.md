@@ -9,7 +9,7 @@ PDFManager est un logiciel permettant de gérer des fichiers PDF.
 - Fusionner des fichiers PDF
 - Séparer des pages d'un fichier PDF
 - Extraire des pages d'un fichier PDF
-- Tourner des pages d'un fichier PDF
+- Pivoter des pages d'un fichier PDF
 
 ## Version exécutable
 
